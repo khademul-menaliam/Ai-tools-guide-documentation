@@ -47,9 +47,6 @@ Offline Word (`.docx`) versions are archived in the [`downloads/`](./downloads/)
 ## 📅 Roadmap & Daily Updates
 
 - [x] **01-web-design-and-dev**: Core AI web design tools & workflows
-- [ ] **02-ai-coding-agents**: Best practices for Cursor, Claude Code, Copilot, Codex
-- [ ] **03-prompt-engineering**: System prompt templates and design skills
-- [ ] **04-ai-media-generation**: Midjourney, Flux, SD, and 3D pipelines
 
 ---
 
