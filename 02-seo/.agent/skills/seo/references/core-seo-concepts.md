@@ -381,3 +381,49 @@ Audit reports must explicitly separate file interactions into three categories:
 
 A file must **NEVER** be reported as modified merely because the Skill inspected or validated it.
 
+### 11.5 Standardized Audit Completion & Next Steps Handoff Structure
+Every completed SEO audit must conclude with a standardized handoff section:
+
+```text
+SEO AUDIT COMPLETE
+
+Status:
+
+* Automatically fixed: X
+* Remaining issues: X
+* Information required: X
+* Permission required: Yes/No
+
+Automatically fixed:
+
+* [Issue description & file(s) modified]
+
+Remaining issues:
+
+* [Issue description & reason remaining]
+
+Information required:
+
+* [Missing item & brief explanation of why it is needed, e.g. production frontend domain for canonical URLs and production sitemap generation]
+
+Next step:
+
+* [Clear, actionable instruction based on actual audit state]
+```
+
+#### Resolution Guidelines:
+1. **Summary Status Counts**: Always output numeric counts for `Automatically fixed: X`, `Remaining issues: X`, and `Information required: X`, and a clear `Permission required: Yes/No`.
+2. **Zero-Item Sections**: If a count is 0, retain the status line (e.g. `* Remaining issues: 0`) and omit the corresponding detailed section header and bullet list.
+3. **Preserve Automatic Fixes**: Deterministic and safe issues are automatically resolved without requesting permission and listed under `Automatically fixed:`.
+4. **Missing Information**: If required parameters (e.g. production frontend domain) are missing, request them explicitly under `Information required:` with a brief explanation of purpose (e.g. required for production canonical URLs and sitemap generation). Never invent domain values or confuse backend API base URLs (`NEXT_PUBLIC_BASE_URL`, `http://backend.test`) with the production frontend domain.
+5. **Permission Requirements**:
+   - If changes require user approval, state `Permission required: Yes` and identify the awaiting changes.
+   - If no approval is needed, state `Permission required: No`.
+6. **Determining the Next Step**:
+   - If missing information is pending -> Ask user to provide the exact item(s).
+   - If user permission is pending -> Ask user to confirm/approve changes.
+   - If 0 issues remain, 0 info required, Permission: No -> State that current SEO work is complete and guide user on when to re-run incremental audits (e.g. upon adding new routes or modifying SEO metadata).
+7. **Actionable & Non-Duplicative**: Keep next steps concise and actionable without re-summarizing `DEPLOYMENT-SEO-GUIDE.md`.
+8. **Tracker Consistency**: Maintain `system-docs/seo-tracker.json` state matching the audit result.
+
+

@@ -82,8 +82,8 @@ The skill maintains complete separation between reusable skill instructions and 
 
 ## Summary of Workflows
 
-1. **Initial Baseline Audit**: Detects project stack & rendering -> Asks user for missing business details -> Writes `seo-config.json` -> Classifies routes (`page`, `api`, `admin`, `redirect`, `error`, `asset`) -> Builds verified `isSeoPageCandidate` inventory -> Computes baseline content hashes -> Audits global & page SEO -> Generates sitemap for HTML pages -> Writes `seo-tracker.json` -> Reports summary.
-2. **Subsequent Incremental Audit**: Reads `seo-config.json` & `seo-tracker.json` -> Re-classifies routes -> Checks legacy hashes & shared layout invalidation -> Computes current content hashes -> Classifies routes (`NEW`, `MODIFIED`, `UNCHANGED`, `DELETED`) -> Cleans up deleted routes -> Audits only modified/new/incomplete `isSeoPageCandidate` pages -> Updates sitemap & `seo-tracker.json` -> Reports progress.
-3. **Deployment Guide Generation**: Generates `system-docs/DEPLOYMENT-SEO-GUIDE.md` on demand.
+1. **Initial Baseline Audit**: Detects project stack & rendering -> Asks user for missing business details -> Writes `seo-config.json` -> Classifies routes (`page`, `api`, `admin`, `redirect`, `error`, `asset`) -> Builds verified `isSeoPageCandidate` inventory -> Computes baseline content hashes -> Audits global & page SEO -> Generates sitemap for HTML pages -> Writes `seo-tracker.json` -> Automatically generates `system-docs/DEPLOYMENT-SEO-GUIDE.md` -> Reports summary with Next Steps.
+2. **Subsequent Incremental Audit**: Reads `seo-config.json` & `seo-tracker.json` -> Re-classifies routes -> Checks legacy hashes & shared layout invalidation -> Computes current content hashes -> Classifies routes (`NEW`, `MODIFIED`, `UNCHANGED`, `DELETED`) -> Cleans up deleted routes -> Audits only modified/new/incomplete `isSeoPageCandidate` pages -> Updates sitemap & `seo-tracker.json` -> Automatically updates `system-docs/DEPLOYMENT-SEO-GUIDE.md` -> Reports progress with Next Steps.
+3. **Deployment Guide Generation**: Generates or updates `system-docs/DEPLOYMENT-SEO-GUIDE.md` combining live tracker state with post-launch GSC/Bing verification procedures (executed automatically post-audit or on demand).
 
 For full step-by-step operating details, consult [seo-skill-guide.md](seo-skill-guide.md).

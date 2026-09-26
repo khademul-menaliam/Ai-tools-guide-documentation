@@ -45,6 +45,7 @@ This skill provides an automated, framework-aware SEO audit, implementation, and
 17. **CWV awareness vs measurement.** Static code inspections can verify implementation hygiene (`next/font`, `display: swap`, image dimensions, lazy loading) -> `cwvImplementation: "checked"`. Static analysis MUST NEVER infer `LCP PASS`, `CLS PASS`, `INP PASS`, or `Core Web Vitals PASS`. Without live lab/field measurement data, set `cwvMeasurement: "not_measured"` (`NOT MEASURED`). If measurement tools are unavailable, record `Validation: NOT RUN` (`Reason: Runtime/field measurement data unavailable`). Never turn static awareness into a performance score.
 18. **Evidence-based validation.** Validation means executing actual checks (static syntax/JSON checks, framework typecheck/build/lint, or rendered HTML inspections). File existence alone is NOT validation. Every reported validation check must include `Command:`, `Result:`, `Evidence:`, `Impact:`. If validation could not be executed, report `Validation: NOT RUN` with a clear reason.
 19. **Social identity safety.** If social account handles or production OG image paths are unverified, set them as `UNRESOLVED`. Never invent handle names (e.g. `@brandhandle`) or fake asset paths. Generic cards without handles may be used if valid, but prompt the user when handle or asset information is required.
+20. **Standardized Next Steps & Audit Result Handoff.** Every completed SEO audit must conclude with a clear, actionable `SEO AUDIT COMPLETE` block with explicit status counts (`Automatically fixed: X`, `Remaining issues: X`, `Information required: X`, `Permission required: Yes/No`), detailed bullet lists for non-zero items (omitting sections with 0 items), and a dynamic `Next step:` derived from the actual audit state. Safe deterministic issues are fixed automatically without asking permission. Missing required information (such as production frontend domain) must be requested with an explanation of its purpose (e.g. for canonical URLs and sitemap generation), never guessing or confusing backend API URLs with the frontend domain. If no issues remain and no information/permission is needed, clearly confirm current SEO work is complete and provide guidance for future audits.
 21. **Explicit finding lifecycle & false-fix prohibition.** The Skill must distinguish the lifecycle of every audit finding: `NEW ISSUE`, `FIXED`, `ALREADY FIXED`, `UNRESOLVED`, and `NO ISSUE`. Whenever the Skill discovers a defect in the current source and successfully resolves it during the current run, the finding must explicitly report `Status: NEW ISSUE → FIXED` (it must NOT report only `FIXED`). The Skill must **NEVER** report an issue as `FIXED`, `NEW ISSUE → FIXED`, `FOUND & FIXED`, or equivalent unless the current run actually modified the relevant project file or configuration and post-fix validation confirms the issue is resolved. If the required implementation already exists in code, report `Status: ALREADY FIXED → NO CHANGE` with 0 files modified. If an issue cannot be safely resolved automatically (e.g. unknown domain), report `Status: UNRESOLVED → USER INPUT REQUIRED`. If inspected code is clean, report `Status: NO ISSUE`.
 22. **Current-state precedence over historical tracker state.** Current source code is always authoritative for current implementation state. Historical tracker status is informational only. If a project is reverted between runs, re-detecting a defect is valid and must be reported as `NEW ISSUE → FIXED`. Conversely, if code already contains the correct implementation, report `ALREADY FIXED → NO CHANGE` regardless of past unresolved flags in tracker history.
 23. **Separate tracking of inspected vs modified files.** The Skill must explicitly track and report `Files Inspected`, `Files Modified`, and `Files Unchanged`. A file must NEVER be listed as modified merely because it was inspected.
@@ -210,6 +211,51 @@ Files Summary:
 - Files Modified: [Count / List] (0 if no changes made)
 - Files Unchanged: [Count / List]
 ```
+
+### 6. Standardized Audit Completion & Next Steps Handoff Structure
+Every completed SEO audit (Initial Audit Workflow 1 and Incremental Audit Workflow 2) MUST conclude with this standardized handoff block:
+
+```text
+SEO AUDIT COMPLETE
+
+Status:
+
+* Automatically fixed: X
+* Remaining issues: X
+* Information required: X
+* Permission required: Yes/No
+
+Automatically fixed:
+
+* [Issue description & file(s) modified]
+
+Remaining issues:
+
+* [Issue description & reason remaining]
+
+Information required:
+
+* [Missing item & brief explanation of why it is needed, e.g. production frontend domain for canonical URLs and production sitemap generation]
+
+Next step:
+
+* [Clear, actionable instruction based on actual audit state]
+```
+
+#### Handoff & Next Step Resolution Rules:
+1. **Status Summary Counts**: The `Status:` block must always show explicit counts for `Automatically fixed: X`, `Remaining issues: X`, and `Information required: X`, and a clear `Permission required: Yes/No`.
+2. **Zero-Item Sections**: If a section has 0 items, keep its count in the `Status:` block (e.g. `* Remaining issues: 0`, `* Information required: 0`), but **omit** the unnecessary detailed section header and bullet list below.
+3. **Preserve Automatic-Fix Behavior**: Continue fixing safe, deterministic SEO issues automatically without asking permission. Report all such resolved items under `Automatically fixed:`.
+4. **Missing Information vs Guessing**: If required information is missing (such as production frontend domain), request it explicitly under `Information required:` and explain why it is needed (e.g. production canonical URLs and sitemap generation). Never invent values or confuse backend API base URLs (`NEXT_PUBLIC_BASE_URL`, `http://backend.test`) with the production frontend domain.
+5. **Permission Requirements**:
+   - If genuine user permission or decision is required before applying sensitive changes, set `Permission required: Yes` and list what awaits approval under `Next step:`.
+   - If no permission is needed, explicitly state `Permission required: No`.
+6. **Dynamic State-Driven `Next step:`**:
+   - **Missing Info / Domain**: Instruct user to provide the missing frontend domain or specific configuration.
+   - **Approval Pending**: Instruct user to review and confirm the proposed changes.
+   - **All Clear (0 remaining, 0 info required, Permission: No)**: State clearly that current SEO work is complete, and instruct user to run the SEO skill again whenever new routes, pages, or SEO metadata changes are introduced in the future.
+7. **Actionable & Non-Duplicative**: Keep the Next Steps section concise and actionable without duplicating the detailed post-launch verification checklists in `DEPLOYMENT-SEO-GUIDE.md`.
+8. **Tracker State Consistency**: Maintain `system-docs/seo-tracker.json` in full alignment with the audit result (distinguishing completed/fixed routes from pending items).
 
 ---
 
@@ -394,16 +440,18 @@ Perform this workflow when `system-docs/seo-config.json` does NOT exist:
 12. **Log Unresolved Items**: Mark items requiring business decisions as pending.
 13. **Initialize Tracker**: Write findings to `system-docs/seo-tracker.json` with `"schemaVersion": "1.0"` including classification properties, `metadataSource`, and CWV status for all routes.
 14. **Validate Route Inventory Consistency**: Ensure `verified SEO-page inventory == tracker SEO-page routes == sitemap candidates`. If any mismatch exists, halt execution and report an error immediately rather than proceeding.
-15. **Report Status**: Present a structured summary with explicit breakdown of:
+15. **Generate / Update Deployment Guide**: Automatically execute Workflow 3 to generate or update `system-docs/DEPLOYMENT-SEO-GUIDE.md` based on latest tracker state and verified configuration (even if the project is already SEO-compliant with 0 fixes needed). The user does NOT need to explicitly request this guide.
+16. **Report Status & Conclude with Next Steps**: Present a structured summary with explicit breakdown of:
     - Discovered routes, SEO page candidates, non-SEO HTML routes (`transactional`, `auth`, `utility`), API routes, admin routes, redirects, error views, static assets.
     - Findings breakdown with lifecycle statuses (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`).
     - File summary separating `Files Inspected`, `Files Modified`, and `Files Unchanged`.
+    - **Conclude with Standardized `SEO AUDIT COMPLETE` Next Steps Block**: Include status counts (`Automatically fixed: X`, `Remaining issues: X`, `Information required: X`, `Permission required: Yes/No`), detailed lists for non-zero items, and the dynamic `Next step:` instruction derived from the actual audit state.
 
 ---
 
 ## Workflow 2: Subsequent Incremental Audit
 
-Perform this workflow when `system-docs/seo-config.json` and `system-docs/seo-tracker.json` ALREADY exist:
+Perform this workflow when `system-docs/seo-config.json` and `system-docs/seo-tracker.json` ALREADY exist (or when user asks to fix SEO issues):
 
 1. **Read Existing State**: Load `system-docs/seo-config.json` and `system-docs/seo-tracker.json`. Check `schemaVersion` compatibility. Respect any preserved `userOverridden` rendering settings. Note: Live source code is authoritative; historical tracker status does not override current code inspection.
 2. **Scan & Classify Current Routes**: Discover current project routes, re-classify each route through the multi-stage pipeline, calculate current `contentHash`, and compute `globalSeoHash`.
@@ -431,15 +479,16 @@ Perform this workflow when `system-docs/seo-config.json` and `system-docs/seo-tr
    - If `domain` is resolved, regenerate `sitemap.xml` with verified `isSeoPageCandidate: true` routes.
    - Save updated `contentHash`, `globalSeoHash`, timestamps, and statuses to `system-docs/seo-tracker.json`.
 10. **Validate Route Inventory Consistency**: Confirm `verified SEO-page inventory == tracker SEO-page routes == sitemap candidates`. If any mismatch exists, halt execution and report an error immediately rather than proceeding.
-11. **Report Progress**: Present incremental changes, findings lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), legacy backfilled routes, non-SEO HTML routes breakdown, remaining pending items, list of deleted routes removed, and `Files Inspected` vs `Files Modified` vs `Files Unchanged`.
+11. **Regenerate / Update Deployment Guide**: Automatically execute Workflow 3 to regenerate or update `system-docs/DEPLOYMENT-SEO-GUIDE.md` reflecting the latest tracker state, resolved issues, and route changes.
+12. **Report Progress & Conclude with Next Steps**: Present incremental changes, findings lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), legacy backfilled routes, non-SEO HTML routes breakdown, remaining pending items, list of deleted routes removed, `Files Inspected` vs `Files Modified` vs `Files Unchanged`, and conclude with the standardized `SEO AUDIT COMPLETE` Next Steps block.
 
 ---
 
 ## Workflow 3: Deployment Guide Generation
 
-When the user requests a deployment or go-live checklist, generate `system-docs/DEPLOYMENT-SEO-GUIDE.md`:
+Generates or updates `system-docs/DEPLOYMENT-SEO-GUIDE.md`. This workflow is automatically executed at the conclusion of Workflow 1 (Initial Audit) and Workflow 2 (Incremental Audit), whenever SEO issues are fixed, or when directly requested:
 
-1. Read current state from `system-docs/seo-tracker.json`.
+1. Read current state from `system-docs/seo-tracker.json` and `system-docs/seo-config.json`.
 2. Load static post-deployment rules from [gsc-post-deploy.md](references/gsc-post-deploy.md).
 3. Combine tracker status with step-by-step instructions for:
    - Google Search Console domain verification & sitemap submission

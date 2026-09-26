@@ -179,10 +179,11 @@ When `system-docs/seo-config.json` is missing:
 13. **Log Unresolved Items**: Mark items requiring business decisions as pending.
 14. **Initialize Tracker**: Write findings to `system-docs/seo-tracker.json` with `"schemaVersion": "1.0"` including classification properties, `metadataSource`, and CWV status for all routes.
 15. **Validate Route Inventory Consistency**: Ensure `verified SEO-page inventory == tracker SEO-page routes == sitemap candidates`. If any mismatch exists, halt execution and report an error immediately.
-16. **Report Status**: Present a structured summary with explicit breakdown of total discovered routes, SEO page candidates, non-SEO HTML routes (`transactional`, `auth`, `utility`), API routes, admin routes, redirects, error views, static assets, finding lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), and `Files Inspected` vs `Files Modified` vs `Files Unchanged`.
+16. **Generate / Update Deployment Guide**: Automatically execute Workflow 3 to generate or update `system-docs/DEPLOYMENT-SEO-GUIDE.md` based on latest tracker state and verified configuration (even if the project is already SEO-compliant with 0 fixes needed). The user does NOT need to explicitly request this guide.
+17. **Report Status & Conclude with Next Steps**: Present a structured summary with explicit breakdown of total discovered routes, SEO page candidates, non-SEO HTML routes (`transactional`, `auth`, `utility`), API routes, admin routes, redirects, error views, static assets, finding lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), `Files Inspected` vs `Files Modified` vs `Files Unchanged`, and conclude with the standardized `SEO AUDIT COMPLETE` Next Steps block (status counts, detailed non-zero lists, and dynamic next step derived from actual audit state).
 
 ### 4.2 Incremental Subsequent Audit (Workflow 2)
-When `system-docs/seo-config.json` and `seo-tracker.json` ALREADY exist:
+When `system-docs/seo-config.json` and `seo-tracker.json` ALREADY exist (or when user asks to fix SEO issues):
 1. Agent loads `seo-config.json` and `seo-tracker.json` (verifying `schemaVersion`). Note: Live codebase is authoritative; past tracker status does not override current code inspection.
 2. Agent scans current project routes, re-classifies each route through the multi-stage pipeline, calculates current `contentHash`, and computes `globalSeoHash`.
 3. Agent checks for legacy tracker entries missing `contentHash`/classification or shared layout file modifications (`currentGlobalSeoHash != trackedGlobalSeoHash`).
@@ -194,7 +195,8 @@ When `system-docs/seo-config.json` and `seo-tracker.json` ALREADY exist:
 9. Fixes are applied ONLY to actionable `NEW ISSUE` findings. On pass, record `Status: NEW ISSUE → FIXED` and add modified files to `Files Modified`; unchanged files are recorded as `Status: ALREADY FIXED → NO CHANGE` and added to `Files Unchanged`. Tracker `seo-tracker.json` is updated.
 10. HTML sitemap is updated (or maintained as `"pending_domain"` if domain is UNRESOLVED).
 11. **Validate Route Inventory Consistency**: Confirm `verified SEO-page inventory == tracker SEO-page routes == sitemap candidates`. If any mismatch exists, halt execution and report an error immediately.
-12. Present incremental progress report with findings lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`) and file modification breakdown.
+12. **Regenerate / Update Deployment Guide**: Automatically execute Workflow 3 to regenerate or update `system-docs/DEPLOYMENT-SEO-GUIDE.md` reflecting the latest tracker state, resolved issues, and route changes.
+13. **Report Progress & Conclude with Next Steps**: Present incremental progress report with findings lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), file modification breakdown, and conclude with the standardized `SEO AUDIT COMPLETE` Next Steps block.
 
 ---
 
