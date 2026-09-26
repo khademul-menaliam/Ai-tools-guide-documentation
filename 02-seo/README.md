@@ -37,14 +37,17 @@ This directory houses our portable, agentic **SEO Skill** (`.agent/skills/seo/`)
 
 We used [`daniel-amekpoagbe/react-seo-skills`](https://github.com/daniel-amekpoagbe/react-seo-skills) as our base technical reference. Below is a comparison highlighting how our skill builds upon and extends the base foundation:
 
-| Feature / Dimension | Base `react-seo-skills` Repo | Our Extended SEO Agent Skill (Phase 3.1.1 Hardened) |
+| Feature / Dimension | Base `react-seo-skills` Repo | Our Extended SEO Agent Skill (Phase 3.6.3 Hardened) |
 | :--- | :--- | :--- |
 | **Supported Frameworks** | Next.js (App & Pages Router), Astro, Vite + React | Next.js/React, Vue/Nuxt, Angular, Laravel (extensible architecture) |
-| **Route Classification** | Basic / Assumptions | Formal Classification (`page`, `api`, `admin`, `redirect`, `error`, `asset`, `unknown`) |
-| **API Endpoint Handling** | None (could treat API as HTML) | REST/JSON API endpoints explicitly excluded from HTML sitemaps and meta audits |
+| **Route Classification** | Basic / Assumptions | Multi-Stage Pipeline (`page`, `transactional`, `auth`, `utility`, `api`, `admin`, `redirect`, `error`, `asset`, `unknown`) |
+| **Non-SEO HTML & API Handling** | None (could treat API/forms as HTML SEO) | Transactional, auth, utility HTML routes and REST/JSON API endpoints excluded from sitemaps and SEO audits |
+| **Metadata Source Resolution** | None / Naive | Independent structural resolution (`resolveMetadataField`), nearest nested layout precedence, AST/return inspection, zero raw string heuristics |
+| **Finding Lifecycle & Repeatability**| None | Strict lifecycle (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), current-state precedence, zero false fixes |
 | **Audit State Memory** | None (stateless; re-audits whole codebase every run) | Incremental tracking via `system-docs/seo-tracker.json` (`schemaVersion: "1.0"`) |
 | **Change Detection** | Timestamp / None | Deterministic SHA-256 content hashing (`contentHash: "sha256:..."`) |
 | **Shared SEO Invalidation** | None | Changes to root layouts (`app/layout.tsx`) invalidate dependent route hashes (`globalSeoHash`) |
+| **File Modification Tracking** | None | Separate reporting of `Files Inspected`, `Files Modified`, and `Files Unchanged` |
 | **Legacy Tracker Migration** | None | Backfills missing `contentHash` entries automatically during baseline re-audit |
 | **Deleted Route Cleanup** | None | Automatic comparison of discovered routes vs tracker; cleans up deleted routes |
 | **Rendering Detection** | Basic / Implied | Conservative classification (`SSR`, `SSG`, `CSR`, `Hybrid`, `Unknown`) in `seo-config.json` |

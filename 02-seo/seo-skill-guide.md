@@ -94,7 +94,7 @@ Maintains incremental audit history per route, route classification metadata, co
     "globalStatus": {
       "type": "object",
       "properties": {
-        "sitemap": { "type": "string", "enum": ["complete", "needs_attention", "missing"] },
+        "sitemap": { "type": "string", "enum": ["complete", "needs_attention", "missing", "pending_domain"] },
         "robots": { "type": "string", "enum": ["complete", "needs_attention", "missing"] },
         "gscVerified": { "type": "boolean" },
         "cwvChecked": { "type": "boolean" },
@@ -106,12 +106,22 @@ Maintains incremental audit history per route, route classification metadata, co
       "additionalProperties": {
         "type": "object",
         "properties": {
-          "routeType": { "type": "string", "enum": ["page", "api", "admin", "redirect", "error", "asset", "unknown"] },
+          "routeType": { "type": "string", "enum": ["page", "transactional", "auth", "utility", "api", "admin", "redirect", "error", "asset", "unknown"] },
           "responseType": { "type": "string", "enum": ["html", "json", "redirect", "asset", "unknown"] },
           "isPublic": { "type": "boolean" },
           "isRedirect": { "type": "boolean" },
           "isSeoPageCandidate": { "type": "boolean" },
           "status": { "type": "string", "enum": ["complete", "needs_attention", "pending", "excluded"] },
+          "metadataSource": {
+            "type": "object",
+            "properties": {
+              "title": { "type": "string", "enum": ["page", "inherited", "missing"] },
+              "description": { "type": "string", "enum": ["page", "inherited", "missing"] }
+            }
+          },
+          "sitemapExpansionStatus": { "type": "string", "enum": ["complete", "pending", "unresolved", "not-applicable"] },
+          "cwvImplementation": { "type": "string", "enum": ["checked", "unchecked"] },
+          "cwvMeasurement": { "type": "string", "enum": ["measured", "not_measured"] },
           "lastAudited": { "type": "string", "format": "date-time" },
           "contentHash": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" },
           "issuesResolved": { "type": "array", "items": { "type": "string" } },
@@ -143,34 +153,48 @@ Maintains incremental audit history per route, route classification metadata, co
 When `system-docs/seo-config.json` is missing:
 1. Agent inspects project dependencies (`package.json`, `composer.json`) and directories.
 2. Stack, language, and rendering strategy (`SSR`, `SSG`, `CSR`, `Hybrid`, `Unknown`) are determined conservatively.
-3. If domain or site name are not found in config/env, agent asks user for target details.
+3. **Ask Missing Essentials & Distinguish Domain vs API**: If production website domain or site name are not found in config/env, agent prompts user. Distinguishes website domain from backend API base URLs (`NEXT_PUBLIC_BASE_URL`, `http://backend.test`); never promotes backend API URLs to canonical website domains. If domain is unverified, sets `domain: "UNRESOLVED"`.
 4. `system-docs/seo-config.json` is created with `"schemaVersion": "1.0"`. Preserve existing user overrides if present.
 5. Agent scans codebase to list all routes.
-6. **Formal Route Classification**: Classify each route into `page`, `api`, `admin`, `redirect`, `error`, `asset`, or `unknown`. Determine `isSeoPageCandidate`.
-7. **Build Verified SEO-Page Inventory**: Filter routes where `isSeoPageCandidate: true`.
+6. **Multi-Stage Route Classification**: Execute classification pipeline:
+   - Determine `responseType` (`html`, `json`, `redirect`, `asset`, `unknown`).
+   - Determine `isPublic` from auth guards and session middleware (independent of robots.txt).
+   - Classify `routeType` (`page`, `transactional`, `auth`, `utility`, `api`, `admin`, `redirect`, `error`, `asset`, `unknown`) based on implementation evidence (forms, mutations, auth flows, checkout logic, post-action states).
+   - Assign `isSeoPageCandidate: true` ONLY for public `page` routes. Non-SEO HTML routes (`transactional`, `auth`, `utility`) receive `isSeoPageCandidate: false`.
+7. **Build Verified SEO-Page Inventory**: Filter routes where `isSeoPageCandidate: true` (excludes non-SEO HTML routes, API endpoints, admin, redirects, error handlers, and static assets).
 8. **Calculate Hashes**: Compute deterministic `sha256` content hash for each route and compute `globalSeoHash` for shared SEO layout files.
 9. **Audit Global SEO**: Check sitemap configuration, `robots.txt`, root layout/head fallbacks, and global JSON-LD (`Organization`/`WebSite`).
-10. **Audit Page SEO**: Inspect **ONLY** verified `isSeoPageCandidate: true` routes for title, description, canonical, OG image, JSON-LD, headings, images, and links.
-11. **Apply Safe Automated Fixes**: Update missing metadata, standard canonical tags, or correct structural formatting using framework conventions.
-12. **Generate HTML Sitemap**: Include **ONLY** verified `isSeoPageCandidate: true` routes in `sitemap.xml`. Exclude API endpoints, redirects, admin routes, and static assets.
+10. **Audit Page SEO & Classify Findings**: Inspect **ONLY** verified `isSeoPageCandidate: true` routes in live code and classify findings:
+    - `<title>` and `<meta name="description">`: evaluate `resolveMetadataField(route, "title")` and `resolveMetadataField(route, "description")` independently across the hierarchy (`page -> nearest applicable nested layout -> parent layout(s) -> root layout -> missing`). Inspect actual AST/exported metadata structure and `generateMetadata()` return fields (never infer `inherited` or `page` from unverified presence/absence or naive substring matches). Report concrete evidence citing exact declarations.
+    - Next.js 15+ App Router: verify `generateMetadata({ params })` awaits `params` (`const { slug } = await params;`) before property access (`NEW ISSUE` if unawaited, `ALREADY FIXED` if awaited)
+    - Canonical tags, OG tags, JSON-LD, heading hierarchy, images, and links
+    - CWV static implementation hygiene (`cwvImplementation: "checked"`, `cwvMeasurement: "not_measured"`)
+11. **Apply Safe Automated Fixes & Track File Modifications**:
+    - Modify files ONLY for actionable `NEW ISSUE` findings. Validate fixes. On pass, record `Status: NEW ISSUE → FIXED` and add to `Files Modified`.
+    - If code is already compliant, record `Status: ALREADY FIXED → NO CHANGE`, `Files Modified: 0`, and add to `Files Unchanged`. NEVER report "FOUND & FIXED" or only "FIXED" when no file changes occurred.
+    - If blocked on missing external data, record `Status: UNRESOLVED → USER INPUT REQUIRED`.
+12. **Generate HTML Sitemap (or Defer if Domain UNRESOLVED)**:
+    - If `domain == "UNRESOLVED"`, DO NOT write a physical production sitemap containing absolute URLs with placeholder/fake domains (`example.com`, `localhost`). Record `globalStatus.sitemap: "pending_domain"`.
+    - If `domain` is resolved, include **ONLY** verified `isSeoPageCandidate: true` routes in `sitemap.xml`. Exclude non-SEO HTML routes (`transactional`, `auth`, `utility`), API endpoints, redirects, admin routes, and static assets. Record `globalStatus.sitemap: "complete"`.
 13. **Log Unresolved Items**: Mark items requiring business decisions as pending.
-14. **Initialize Tracker**: Write findings to `system-docs/seo-tracker.json` with `"schemaVersion": "1.0"` including classification properties for all routes.
+14. **Initialize Tracker**: Write findings to `system-docs/seo-tracker.json` with `"schemaVersion": "1.0"` including classification properties, `metadataSource`, and CWV status for all routes.
 15. **Validate Route Inventory Consistency**: Ensure `verified SEO-page inventory == tracker SEO-page routes == sitemap candidates`. If any mismatch exists, halt execution and report an error immediately.
-16. **Report Status**: Present a structured summary of completed fixes, excluded API/admin routes, and pending items to the user.
+16. **Report Status**: Present a structured summary with explicit breakdown of total discovered routes, SEO page candidates, non-SEO HTML routes (`transactional`, `auth`, `utility`), API routes, admin routes, redirects, error views, static assets, finding lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), and `Files Inspected` vs `Files Modified` vs `Files Unchanged`.
 
 ### 4.2 Incremental Subsequent Audit (Workflow 2)
 When `system-docs/seo-config.json` and `seo-tracker.json` ALREADY exist:
-1. Agent loads `seo-config.json` and `seo-tracker.json` (verifying `schemaVersion`).
-2. Agent scans current project routes, re-classifies each route, calculates current `contentHash`, and computes `globalSeoHash`.
+1. Agent loads `seo-config.json` and `seo-tracker.json` (verifying `schemaVersion`). Note: Live codebase is authoritative; past tracker status does not override current code inspection.
+2. Agent scans current project routes, re-classifies each route through the multi-stage pipeline, calculates current `contentHash`, and computes `globalSeoHash`.
 3. Agent checks for legacy tracker entries missing `contentHash`/classification or shared layout file modifications (`currentGlobalSeoHash != trackedGlobalSeoHash`).
 4. Routes are classified into 4 distinct categories (`NEW`, `MODIFIED`, `UNCHANGED`, `DELETED`).
 5. Confirmed `DELETED` routes are pruned from the active `routes` object in `seo-tracker.json`.
-6. Only matching framework reference is loaded (e.g., `references/vue-nuxt.md`).
-7. Agent audits all **`NEW`** and **`MODIFIED`** routes where `isSeoPageCandidate: true`. Non-SEO candidates (`api`, `admin`, `redirect`, `asset`) are skipped.
-8. Fixes are applied and `seo-tracker.json` is updated with current timestamps, backfilled content hashes, and updated `globalSeoHash`.
-9. HTML sitemap is regenerated with verified `isSeoPageCandidate: true` routes.
-10. **Validate Route Inventory Consistency**: Confirm `verified SEO-page inventory == tracker SEO-page routes == sitemap candidates`. If any mismatch exists, halt execution and report an error immediately.
-11. Present incremental progress report.
+6. Only matching framework reference is loaded (e.g., `references/nextjs-react.md`).
+7. Agent inspects live code for all **`NEW`** and **`MODIFIED`** routes where `isSeoPageCandidate: true`. Non-SEO candidates (`transactional`, `auth`, `utility`, `api`, `admin`, `redirect`, `asset`) are skipped. Checks Next.js 15+ async `params` where applicable.
+8. Findings are classified in live code: `NEW ISSUE` (defect exists now), `ALREADY FIXED` (already compliant), `UNRESOLVED` (requires user input), `NO ISSUE` (clean).
+9. Fixes are applied ONLY to actionable `NEW ISSUE` findings. On pass, record `Status: NEW ISSUE → FIXED` and add modified files to `Files Modified`; unchanged files are recorded as `Status: ALREADY FIXED → NO CHANGE` and added to `Files Unchanged`. Tracker `seo-tracker.json` is updated.
+10. HTML sitemap is updated (or maintained as `"pending_domain"` if domain is UNRESOLVED).
+11. **Validate Route Inventory Consistency**: Confirm `verified SEO-page inventory == tracker SEO-page routes == sitemap candidates`. If any mismatch exists, halt execution and report an error immediately.
+12. Present incremental progress report with findings lifecycle breakdown (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`) and file modification breakdown.
 
 ---
 

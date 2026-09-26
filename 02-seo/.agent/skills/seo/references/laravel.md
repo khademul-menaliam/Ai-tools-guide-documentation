@@ -9,9 +9,23 @@ Covers Laravel full-stack applications (Blade templates), Inertia.js (React/Vue 
 Inspect Laravel routing evidence to classify every route before auditing or adding to sitemaps:
 
 ### 1.1 Classification Signals & Evidence
-- **URL Prefixes are Signals, Not Proof**: Prefixes such as `/api/`, `/v1/`, `/graphql/`, `/admin/` are detection signals. Always inspect the actual route file (`routes/web.php` vs `routes/api.php`), controller response, and middleware.
+- **HTML Response Does NOT Imply SEO Candidate**: Rendering a Blade view or Inertia component is necessary but not sufficient for SEO candidacy. Transactional checkout/booking wizards, authentication forms, and confirmation views are NOT organic search targets.
+- **URL Prefixes are Signals, Not Proof**: Prefixes such as `/api/`, `/v1/`, `/graphql/`, `/admin/`, `/auth/` are detection signals. Always inspect the actual route file (`routes/web.php` vs `routes/api.php`), controller response, form actions, and middleware.
+- **Public Document Pages (`routeType: "page"`, `responseType: "html"`, `isSeoPageCandidate: true`)**:
+  - Routes in `routes/web.php` returning a Blade view (`return view('pages.about')`) or Inertia page response serving public content/informational pages (`/`, `/about`, `/events`, `/events/{id}`, `/privacy`) without authentication middleware.
+  - *Sitemap Policy*: Included in HTML `sitemap.xml` (deferred if production domain is UNRESOLVED).
+- **Transactional Routes (`routeType: "transactional"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Routes handling booking wizards, checkout flows, payment processing, or cart operations.
+  - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`. Excluded from page SEO audits.
+- **Authentication Routes (`routeType: "auth"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Routes rendering login, registration, password reset, or OTP verification forms.
+  - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`. Excluded from page SEO audits.
+- **Post-Action & Utility Views (`routeType: "utility"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Routes rendering confirmation, success, or transaction status views (`/events/{id}/confirmed`).
+  - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`. Excluded from page SEO audits.
 - **REST / JSON API Endpoints (`routeType: "api"`, `isSeoPageCandidate: false`)**:
   - Confirmed when controllers/handlers return `response()->json()`, `Illuminate\Http\JsonResponse`, `AnonymousResourceCollection`, or `JsonResource`.
+  - *CMS API Nuance*: API endpoints returning JSON data (even structured CMS payloads with title/description/body markup) MUST NOT be included in HTML sitemaps or audited for HTML meta tags.
   - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`.
   - *Audit Policy*: **No** HTML `<title>`, `<meta>`, canonical, or OG audit.
 - **Admin / Private Routes (`routeType: "admin"`, `isSeoPageCandidate: false`)**:
@@ -20,9 +34,8 @@ Inspect Laravel routing evidence to classify every route before auditing or addi
   - *Robots Policy*: Disallowed in `robots.txt` if private.
 - **Redirect Routes (`routeType: "redirect"`, `isSeoPageCandidate: false`)**:
   - Controller actions returning `redirect()`, `redirect()->route()`, or `RedirectResponse`.
-- **Public Document Pages (`routeType: "page"`, `responseType: "html"`, `isSeoPageCandidate: true`)**:
-  - Routes in `routes/web.php` returning a Blade view (`return view('pages.about')`) or Inertia page response without authentication middleware.
-  - *Sitemap Policy*: Included in HTML `sitemap.xml`.
+- **Static Assets (`routeType: "asset"`, `isSeoPageCandidate: false`)**:
+  - Static files served from `public/` (`.css`, `.js`, `.jpg`, `.jpeg`, `.png`, `.webp`, `.svg`, `.ico`, `.pdf`, `.woff`, `.woff2`). Excluded from HTML `sitemap.xml`.
 
 ### 1.2 API-Backed Frontend Pages
 If an application consumes a JSON endpoint (e.g. `/v1/cms-pages/about-us`) to render a public Blade or Inertia view (e.g. `/about`):

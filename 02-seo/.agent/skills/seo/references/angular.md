@@ -9,12 +9,23 @@ Covers Angular (v16+) applications using Angular's native `Title` and `Meta` ser
 Inspect Angular application evidence to classify routes before auditing or generating sitemaps:
 
 ### 1.1 Classification Signals & Evidence
-- **URL Path Patterns are Signals, Not Proof**: Route path strings (`/admin`, `/api`) are detection signals. Inspect `Routes` config, component render targets, `HttpClient` service usages, and route guards.
+- **HTML Response Does NOT Imply SEO Candidate**: Rendering an Angular component template is necessary but not sufficient for SEO candidacy. Transactional booking/checkout steps, auth forms, and status utility views are NOT organic search targets.
+- **URL Path Patterns are Signals, Not Proof**: Route path strings (`/admin`, `/api`, `/auth`, `/checkout`) are detection signals. Inspect `Routes` config, component render targets, forms, `HttpClient` service usages, and route guards.
 - **Public Component Document Routes (`routeType: "page"`, `responseType: "html"`, `isSeoPageCandidate: true`)**:
-  - Routes declared in Angular `Routes` module/config that render a page component without authentication guards (`canActivate: [AuthGuard]`).
-  - *Sitemap Policy*: Included in HTML `sitemap.xml`.
+  - Routes declared in Angular `Routes` module/config that render public content/informational page components without authentication guards.
+  - *Sitemap Policy*: Included in HTML `sitemap.xml` (deferred if production domain is UNRESOLVED).
+- **Transactional Routes (`routeType: "transactional"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Angular routes handling booking flows, checkout steps, payment processing, or cart operations.
+  - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`. Excluded from page SEO audits.
+- **Authentication Routes (`routeType: "auth"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Routes rendering login, registration, password recovery, or OTP verification components.
+  - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`. Excluded from page SEO audits.
+- **Post-Action & Utility Views (`routeType: "utility"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Routes rendering confirmation, success, or transaction status components.
+  - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`. Excluded from page SEO audits.
 - **API Services / Data Endpoints (`routeType: "api"`, `isSeoPageCandidate: false`)**:
   - Angular `HttpClient` services (`@Injectable`) fetching backend JSON data, or SSR backend endpoints returning API responses.
+  - *CMS API Nuance*: API endpoints returning JSON data (even structured CMS payloads with title/description/body markup) MUST NOT be included in HTML sitemaps or audited for HTML meta tags.
   - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`.
   - *Audit Policy*: **No** HTML `<title>`, `<meta>`, canonical, or OG audit.
 - **Admin / Protected Routes (`routeType: "admin"`, `isSeoPageCandidate: false`)**:
@@ -22,6 +33,8 @@ Inspect Angular application evidence to classify routes before auditing or gener
   - *Sitemap Policy*: **Must NOT** be included in HTML `sitemap.xml`.
 - **Redirect Routes (`routeType: "redirect"`, `isSeoPageCandidate: false`)**:
   - Routes declaring `redirectTo: '/target-path'` in Angular `Routes` config.
+- **Static Assets (`routeType: "asset"`, `isSeoPageCandidate: false`)**:
+  - Static assets listed in `angular.json` or served from `assets/` (`.css`, `.js`, `.jpg`, `.jpeg`, `.png`, `.webp`, `.svg`, `.ico`, `.pdf`, `.woff`, `.woff2`). Excluded from HTML `sitemap.xml`.
 
 ### 1.2 Rendering Strategy Detection
 - **`SSR`**: Contains `@angular/ssr`, hydration setup (`provideClientHydration()`), or `server.ts` entry point.

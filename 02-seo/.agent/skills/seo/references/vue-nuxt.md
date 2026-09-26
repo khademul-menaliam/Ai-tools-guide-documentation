@@ -9,13 +9,24 @@ Covers Nuxt 3 SSR applications and Vue 3 SPAs (using Unhead / `@unhead/vue`).
 Inspect Nuxt and Vue codebase evidence to classify routes before auditing or generating sitemaps:
 
 ### 1.1 Classification Signals & Evidence
-- **URL Path Patterns are Signals, Not Proof**: Path prefixes (`/api/`, `/v1/`, `/admin/`) are indicative detection signals, NOT absolute proof. Inspect file locations (`pages/*.vue` vs `server/api/*.ts`), handler responses (`defineEventHandler` returning JSON), and route middleware.
-- **Public HTML Pages (`routeType: "page"`, `responseType: "html"`, `isSeoPageCandidate: true`)**:
-  - Nuxt: `pages/*.vue` or `pages/<route>/index.vue`.
-  - Vue SPA: Vue Router routes rendering document components.
-  - *Sitemap Policy*: Included in `@nuxtjs/sitemap`.
+- **HTML Response Does NOT Imply SEO Candidate**: Serving an HTML/Vue template is necessary but not sufficient for SEO candidacy. Transactional checkout/booking flows, auth forms, and post-action views are NOT organic search targets.
+- **URL Path Patterns are Signals, Not Proof**: Path prefixes (`/api/`, `/v1/`, `/admin/`, `/auth/`) are indicative detection signals, NOT absolute proof. Inspect file locations (`pages/*.vue` vs `server/api/*.ts`), handler responses (`defineEventHandler` returning JSON), forms, mutations, and route middleware.
+- **Public HTML Content Pages (`routeType: "page"`, `responseType: "html"`, `isSeoPageCandidate: true`)**:
+  - Nuxt: `pages/*.vue` or `pages/<route>/index.vue` serving public informational/content/marketing pages (`/`, `/about`, `/events`, `/events/[id]`, `/privacy`).
+  - Vue SPA: Vue Router routes rendering public document components.
+  - *Sitemap Policy*: Included in `@nuxtjs/sitemap` (deferred if production domain is UNRESOLVED).
+- **Transactional Flow Routes (`routeType: "transactional"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Pages handling booking, checkout, payment processing, cart mutations, or step wizards (`pages/events/[id]/book.vue`, `pages/checkout/index.vue`).
+  - *Sitemap Policy*: **Must NOT** be included in `@nuxtjs/sitemap`. Excluded from page SEO audits.
+- **Authentication Routes (`routeType: "auth"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Pages handling login, registration, password recovery, or OTP verification (`pages/auth/login.vue`, `pages/auth/verify-otp.vue`).
+  - *Sitemap Policy*: **Must NOT** be included in `@nuxtjs/sitemap`. Excluded from page SEO audits.
+- **Post-Action & Utility Views (`routeType: "utility"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Confirmation screens, success notifications, cancellation notices (`pages/events/[id]/confirmed.vue`).
+  - *Sitemap Policy*: **Must NOT** be included in `@nuxtjs/sitemap`. Excluded from page SEO audits.
 - **REST / JSON API Endpoints (`routeType: "api"`, `isSeoPageCandidate: false`)**:
   - Nuxt Server Routes: `server/api/*.ts|js` or `server/routes/*.ts|js` returning JSON data via `defineEventHandler()`.
+  - *CMS API Nuance*: API endpoints returning JSON data (even structured CMS payloads with title/description/body markup) MUST NOT be included in HTML sitemaps or audited for HTML meta tags.
   - *Sitemap Policy*: **Must NOT** be included in `@nuxtjs/sitemap`.
   - *Audit Policy*: **No** HTML `<title>`, `<meta>`, canonical, or OG audit.
 - **Admin / Private Routes (`routeType: "admin"`, `isSeoPageCandidate: false`)**:
@@ -23,6 +34,8 @@ Inspect Nuxt and Vue codebase evidence to classify routes before auditing or gen
   - *Sitemap Policy*: **Must NOT** be included in `@nuxtjs/sitemap`.
 - **Redirect Routes (`routeType: "redirect"`, `isSeoPageCandidate: false`)**:
   - Routes configured with `navigateTo()` or `definePageMeta({ redirect: '/new-url' })`.
+- **Static Assets (`routeType: "asset"`, `isSeoPageCandidate: false`)**:
+  - Static files (`.css`, `.js`, `.jpg`, `.jpeg`, `.png`, `.webp`, `.svg`, `.ico`, `.pdf`, `.woff`, `.woff2`). Excluded from `@nuxtjs/sitemap`.
 
 ### 1.2 Rendering Strategy Detection
 - **`SSR`**: Default Nuxt 3 mode (`ssr: true` in `nuxt.config.ts`).

@@ -36,15 +36,18 @@ react-seo-skills/
 
 ## 2. Architectural Comparison
 
-| Architectural Dimension | Base `react-seo-skills` Repository | Our Extended SEO Agent Skill (Phase 3.1.1 Hardened) |
+| Feature / Dimension | Base `react-seo-skills` Repository | Our Extended SEO Agent Skill (Phase 3.6.3 Hardened) |
 | :--- | :--- | :--- |
 | **Framework Range** | React (Next.js App/Pages, Vite), Astro | Next.js/React, Vue/Nuxt, Angular, Laravel (with extensible plugin architecture) |
-| **Route Classification** | Basic / Assumptions | Formal Classification (`page`, `api`, `admin`, `redirect`, `error`, `asset`, `unknown`) |
-| **API Endpoint Handling** | None | REST/JSON API endpoints explicitly excluded from HTML sitemaps and meta audits |
+| **Route Classification** | Basic / Assumptions | Multi-Stage Pipeline (`page`, `transactional`, `auth`, `utility`, `api`, `admin`, `redirect`, `error`, `asset`, `unknown`) |
+| **Non-SEO HTML & API Handling** | None | Transactional, auth, utility HTML routes and REST/JSON API endpoints excluded from sitemaps and SEO audits |
+| **Metadata Source Resolution** | None / Naive | Independent structural resolution (`resolveMetadataField`), nearest nested layout precedence, AST/return inspection, zero raw string heuristics |
+| **Finding Lifecycle & Repeatability**| None | Explicit statuses (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), current-state precedence, zero false fixes |
 | **State Persistence** | None (stateless one-shot audit) | `system-docs/seo-config.json` & `system-docs/seo-tracker.json` (`schemaVersion: "1.0"`) |
 | **Audit Strategy** | Re-audits entire codebase on every invocation | Incremental audit (audits only `NEW`, `MODIFIED`, or incomplete `isSeoPageCandidate` routes) |
 | **Change Detection** | Timestamp / None | Deterministic SHA-256 content hashing (`contentHash: "sha256:..."`) |
 | **Shared File Invalidation**| None | Shared root layouts (`app/layout.tsx`) invalidate dependent route hashes (`globalSeoHash`) |
+| **File Modification Tracking** | None | Explicit separation of `Files Inspected`, `Files Modified`, and `Files Unchanged` |
 | **Legacy Tracker Migration** | None | Backfills missing `contentHash` & classification entries automatically |
 | **Deleted Route Handling**| None | Automatic discovery vs tracker comparison; cleans up deleted routes |
 | **Rendering Detection** | Basic / Implied | Conservative classification (`SSR`, `SSG`, `CSR`, `Hybrid`, `Unknown`) |
@@ -60,9 +63,13 @@ react-seo-skills/
 2. **JSON-LD XSS Escaping**: We strictly enforced `.replace(/</g, '\\u003c')` in all reference files to prevent script tag injection vulnerabilities.
 3. **Ask-Before-Guessing & Placeholders**: We preserved the principle that business details must never be invented, enforcing `TODO` markers when details are unsupplied.
 
-### 3.2 Key Phase 3.1 Enhancements Added in Our Skill
-1. **Formal Route Classification Stage**: Enforced **"Discover first. Classify second. Audit third."** principle, categorizing routes into `page`, `api`, `admin`, `redirect`, `error`, `asset`, or `unknown`.
-2. **REST/JSON API Exclusion**: API endpoints are strictly excluded from HTML sitemap generation, HTML meta tag audits, canonical tag checks, and Open Graph validation.
-3. **API-Backed Frontend Pages Handling**: Distinguishes backend API dependencies (`/v1/cms-pages/about-us`) from frontend document pages (`/about`), targeting SEO page audits strictly at document pages.
-4. **Deterministic SEO Page Candidate Rule**: Enforced strict eligibility criteria (`isDocumentPage AND isPublic AND notRedirect AND notError AND notStaticAsset`).
-5. **Content Hash & Shared Layout Invalidation**: Retained SHA-256 route hashing and `globalSeoHash` invalidation for site-wide layout changes.
+### 3.2 Key Phase 3.1–3.6.3 Enhancements Added in Our Skill
+1. **Formal Route Classification Stage**: Enforced **"Discover first. Classify second. Audit third."** principle, categorizing routes into `page`, `transactional`, `auth`, `utility`, `api`, `admin`, `redirect`, `error`, `asset`, or `unknown`.
+2. **REST/JSON API & Non-SEO HTML Exclusion**: Transactional flows, auth screens, utility views, and REST/JSON API endpoints are strictly excluded from HTML sitemaps and page SEO audits.
+3. **Finding Lifecycle & False-Fix Prohibition**: Enforced strict lifecycle statuses (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`). A run never reports "FOUND & FIXED" or only "FIXED" unless files were actually modified during that run.
+4. **Current-State Precedence & Repeatability**: Live codebase state always overrides historical tracker state. Reverted projects deterministically re-detect defects as `NEW ISSUE → FIXED`, while already-fixed code reports `ALREADY FIXED → NO CHANGE`.
+5. **Separation of Inspected vs Modified Files**: Explicit tracking and reporting of `Files Inspected`, `Files Modified`, and `Files Unchanged`.
+6. **Hierarchical Metadata Inheritance Resolution**: Evaluates `resolveMetadataField(route, "title")` and `resolveMetadataField(route, "description")` independently across `page -> nearest nested layout -> parent layout(s) -> root layout -> missing`. Prohibits naive heuristic string assumptions (`includes('title:')`, `includes('description:')`, `includes('generateMetadata')`).
+7. **API-Backed Frontend Pages Handling**: Distinguishes backend API dependencies (`/v1/cms-pages/about-us`) from frontend document pages (`/about`), targeting SEO page audits strictly at document pages.
+8. **Deterministic SEO Page Candidate Rule**: Enforced strict eligibility criteria (`isDocumentPage AND isPublic AND notRedirect AND notError AND notStaticAsset AND routeType == 'page'`).
+9. **Content Hash & Shared Layout Invalidation**: Retained SHA-256 route hashing and `globalSeoHash` invalidation for site-wide layout changes.

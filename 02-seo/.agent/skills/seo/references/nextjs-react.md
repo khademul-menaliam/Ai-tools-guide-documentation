@@ -9,15 +9,26 @@ Covers Next.js App Router, Next.js Pages Router, and Vite + React / SPA architec
 Inspect Next.js and React codebase evidence to classify routes before auditing or generating sitemaps:
 
 ### 1.1 Route Classification Signals & Evidence
-- **URL Path Patterns are Signals, Not Proof**: Path prefixes (`/api/`, `/v1/`, `/admin/`) are indicative detection signals, NOT absolute proof. Always inspect route file types (`page.tsx` vs `route.ts`), controller/handler responses, and middleware.
-- **Public HTML Pages (`routeType: "page"`, `responseType: "html"`, `isSeoPageCandidate: true`)**:
-  - App Router: `app/<route>/page.tsx|jsx`.
+- **HTML Response Does NOT Imply SEO Candidate**: Rendering an HTML page component (`page.tsx|jsx`) is necessary but not sufficient for SEO candidacy. Transactional flows, auth pages, and utility views render HTML but are NOT organic search targets.
+- **URL Path Patterns are Signals, Not Proof**: Path prefixes (`/api/`, `/v1/`, `/admin/`, `/auth/`, `/checkout/`) are indicative detection signals, NOT absolute proof. Always inspect route file types (`page.tsx` vs `route.ts`), implementation forms, server actions, controller/handler responses, and middleware.
+- **Public HTML Content Pages (`routeType: "page"`, `responseType: "html"`, `isSeoPageCandidate: true`)**:
+  - App Router: `app/<route>/page.tsx|jsx` serving public informational/content/marketing pages (e.g. `/`, `/about`, `/events`, `/events/[id]`, `/privacy`).
   - Pages Router: `pages/<route>.tsx|jsx` (excluding `pages/api/*`, `_app.tsx`, `_document.tsx`).
-  - Vite + React SPA: Route view components linked in router configuration.
-  - *Sitemap Policy*: Included in `sitemap.xml`.
+  - Vite + React SPA: Public route view components linked in router configuration.
+  - *Sitemap Policy*: Included in `sitemap.xml` (deferred if production domain is UNRESOLVED).
+- **Transactional / Conversion Flow Routes (`routeType: "transactional"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - App/Pages Router pages handling booking, checkout, payment, cart actions, or order completion (e.g. `app/events/[id]/book/page.jsx`, `app/checkout/page.tsx`).
+  - *Sitemap Policy*: **Must NOT** be included in `sitemap.xml`. Excluded from page SEO audits.
+- **Authentication & Account Access Routes (`routeType: "auth"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - App/Pages Router pages handling login, registration, password recovery, or OTP verification (e.g. `app/auth/login/page.tsx`, `app/auth/verify-otp/page.tsx`).
+  - *Sitemap Policy*: **Must NOT** be included in `sitemap.xml`. Excluded from page SEO audits.
+- **Post-Action & Utility Views (`routeType: "utility"`, `responseType: "html"`, `isSeoPageCandidate: false`)**:
+  - Confirmation screens, success notifications, cancellation notices (e.g. `app/events/[id]/confirmed/page.jsx`).
+  - *Sitemap Policy*: **Must NOT** be included in `sitemap.xml`. Excluded from page SEO audits.
 - **REST / JSON API Endpoints (`routeType: "api"`, `isSeoPageCandidate: false`)**:
   - App Router Route Handlers: `app/api/<endpoint>/route.ts|js` or `app/<endpoint>/route.ts|js` returning `NextResponse.json()` or `Response.json()`.
   - Pages Router API Routes: `pages/api/<endpoint>.ts|js`.
+  - *CMS API Nuance*: API endpoints returning JSON data (even structured CMS payloads with title/description/body markup) MUST NOT be included in HTML sitemaps or audited for HTML meta tags.
   - *Sitemap Policy*: **Must NOT** be included in `sitemap.xml`.
   - *Audit Policy*: **No** HTML `<title>`, `<meta>`, canonical, or OG audit.
 - **Admin / Private Routes (`routeType: "admin"`, `isSeoPageCandidate: false`)**:
@@ -27,6 +38,8 @@ Inspect Next.js and React codebase evidence to classify routes before auditing o
   - Routes declaring `redirect()` in Server Components or configured in `next.config.js` `redirects()`.
 - **Error / Not-Found Pages (`routeType: "error"`, `isSeoPageCandidate: false`)**:
   - App Router `not-found.tsx`, `error.tsx`, or Pages Router `404.tsx`, `500.tsx`.
+- **Static Assets (`routeType: "asset"`, `isSeoPageCandidate: false`)**:
+  - Static files (`.css`, `.js`, `.jpg`, `.jpeg`, `.png`, `.webp`, `.svg`, `.ico`, `.pdf`, `.woff`, `.woff2`). Excluded from `sitemap.xml`.
 
 ### 1.2 Rendering Strategy Detection
 - **`'use client'` Nuance**: The `'use client'` directive marks an individual Client Component boundary; it does **NOT** mean the entire page or project is `CSR`.
@@ -76,8 +89,11 @@ export const metadata: Metadata = {
 };
 ```
 
-### 2.2 Dynamic Metadata (`generateMetadata`)
+### 2.2 Dynamic Metadata (`generateMetadata`) & Next.js 15+ Async `params` Rules
 Use when page content is fetched dynamically from an API or database.
+
+#### Next.js 15+ Pattern (Async `params`)
+In Next.js 15+, `params` passed to `generateMetadata` (and page/layout components) is a `Promise` and **MUST** be awaited before property access.
 
 ```tsx
 // app/products/[slug]/page.tsx
@@ -88,7 +104,7 @@ type Props = {
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { slug } = await params; // Next.js 15 requires awaiting params
+  const { slug } = await params; // MUST await params before accessing slug
   const product = await fetchProduct(slug);
 
   return {
@@ -106,19 +122,97 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 ```
 
-> **Version Warning**: In **Next.js 15+**, `params` is a `Promise<{ slug: string }>` and must be `await`ed. In **Next.js 14 and earlier**, `params` is a synchronous object (`{ slug: string }`).
+#### Required Audit & Remediation Workflow for `generateMetadata`:
+1. **Detect Next.js Version**: Inspect `package.json` `dependencies` / `devDependencies` for `next` version (e.g., `^15.0.0`, `15.x`).
+2. **Inspect `params` Access in Live Code**: Check if `generateMetadata({ params })` accesses `params.id`, `params.slug`, or other properties directly without `await params`.
+3. **Classify Finding Lifecycle**:
+   - **`NEW ISSUE`**: Direct unawaited property access found in live code. Framework runtime defect present. Proceed to step 4.
+   - **`ALREADY FIXED`**: `await params` is already implemented. Report `Status: ALREADY FIXED → NO CHANGE`, `Files Modified: 0`, `Validation: PASS`. 0 files modified; record in `Files Unchanged`. NEVER claim "FOUND & FIXED" or only "FIXED".
+4. **Automated Fix**: Update the signature and function body to await `params` (`const { slug } = await params;` and `params: Promise<...>`) when the change is unambiguous.
+5. **Validate & Report**: Execute typecheck/build/syntax validation. On success, report `Status: NEW ISSUE → FIXED`, `Action: Modified <path>`, `Validation: PASS`, and add to `Files Modified`.
+6. **Indeterminate Version**: If Next.js version cannot be verified, do not guess; prompt user or mark `Status: UNRESOLVED → USER INPUT REQUIRED`.
 
-### 2.3 App Router `sitemap.ts` and `robots.ts`
+> **Version Summary**:
+> - **Next.js 15+**: `params` is a `Promise<{ slug: string }>` -> `const { slug } = await params;`
+> - **Next.js 14 and earlier**: `params` is synchronous -> `const { slug } = params;`
 
-Exclude API routes (`app/api/*`) from `sitemap.ts`:
+### 2.3 Hierarchical Metadata Inheritance Resolution (Next.js App Router)
+
+Next.js App Router evaluates metadata in a hierarchical chain starting from the root layout down to the page component:
+```text
+app/layout.tsx (Root Layout)
+  └── app/(segment)/layout.tsx (Nested Layout)
+        └── app/(segment)/[id]/page.tsx (Page Component)
+```
+
+The Skill must evaluate `title` and `description` independently using separate resolution calls (`resolveMetadataField(route, "title")` and `resolveMetadataField(route, "description")`):
+
+#### 2.3.1 Resolution Hierarchy Rules
+1. **Page-Level Verification**:
+   - Inspect whether the page component (`page.tsx|jsx`) exports a static `metadata` object or `export async function generateMetadata()`.
+   - Inspect the actual properties defined/returned in AST/exports:
+     - If `title` is explicitly declared in `metadata` or returned by `generateMetadata()` -> `metadataSource.title = "page"`.
+     - If `description` is explicitly declared in `metadata` or returned by `generateMetadata()` -> `metadataSource.description = "page"`.
+   - Page-level declarations always take precedence over all parent layouts.
+2. **Parent Layout Traversal (When Field is Absent at Page Level)**:
+   - If a field is NOT declared at page level, traverse upward through the route's applicable layout hierarchy:
+     - Check nearest nested layout (e.g. `app/(segment)/layout.tsx`) for exported `metadata` or `generateMetadata()`.
+     - If found, that nearest nested layout provides the field (`metadataSource.<field> = "inherited"`).
+     - Otherwise, continue up the layout tree to grandparent layouts and finally root layout (`app/layout.tsx`).
+   - If an applicable parent layout defines the field -> `metadataSource.<field> = "inherited"`.
+3. **Missing Classification**:
+   - If neither the page nor any applicable parent layout in the route's chain defines the field -> `metadataSource.<field> = "missing"`.
+
+#### 2.3.2 Strict Prohibitions & Anti-Patterns
+- **No Naive "Absent = Inherited"**: Do NOT infer `inherited` merely because a field is absent from the page file. You MUST inspect parent layouts and verify that an applicable layout actually exports `metadata.<field>` or `generateMetadata()`.
+- **No "generateMetadata = Both Page"**: NEVER infer `title: "page"` and `description: "page"` merely because `generateMetadata()` exists. Inspect the function's return object. If it only returns `{ title: "..." }`, then `description` must be resolved against parent layouts (`inherited` or `missing`).
+- **No Naive Substring Matching**: Prohibit naive regex/string searches (`code.includes('title:')`, `code.includes('description:')`, `code.includes('generateMetadata')`). These cause false positives with component props (`<Card title="..." />`), data payloads, or comments. Inspect exported metadata AST structures.
+
+#### 2.3.3 Inheritance & Dynamic Return Scenarios
+- **Scenario 1 (Page Title + Root Description)**:
+  - `app/layout.jsx` exports `metadata = { title: "Brand", description: "Global description" }`
+  - `app/(main)/about/page.jsx` exports `metadata = { title: "About Us" }`
+  - Result: `metadataSource: { title: "page", description: "inherited" }` (Evidence: Title in `page.jsx`, Description from `app/layout.jsx`).
+- **Scenario 2 (Nested Layout Precedence)**:
+  - `app/layout.jsx` exports `metadata = { title: "Brand", description: "Global" }`
+  - `app/(events)/layout.jsx` exports `metadata = { description: "Explore upcoming events" }`
+  - `app/(events)/events/[id]/page.jsx` exports `generateMetadata()` returning `{ title: "Event Name" }`
+  - Result: `metadataSource: { title: "page", description: "inherited" }` (Evidence: Title in `page.jsx`, Description from nearest parent `app/(events)/layout.jsx`).
+- **Scenario 3 (Page Overriding Nested Layout)**:
+  - `app/(events)/layout.jsx` exports `metadata = { title: "All Events" }`
+  - `app/(events)/events/[id]/page.jsx` exports `generateMetadata()` returning `{ title: "Rock Concert", description: "Live concert" }`
+  - Result: `metadataSource: { title: "page", description: "page" }` (Evidence: Page `generateMetadata()` overrides layout title).
+- **Scenario 4 (Truly Missing Field)**:
+  - `app/(main)/terms/page.jsx` exports `metadata = { title: "Terms" }`
+  - Neither `app/(main)/layout.jsx` nor `app/layout.jsx` exports `description`
+  - Result: `metadataSource: { title: "page", description: "missing" }` (Evidence: Title in `page.jsx`, no layout in hierarchy defines description).
+
+#### 2.3.4 Validation Reporting Format
+Validation reports should format concrete field-level evidence:
+```text
+Route: /about
+Title source: page
+Description source: inherited
+Evidence:
+  page.jsx → exports metadata.title ("About Us")
+  page.jsx → does not define description
+  nearest applicable layout (app/(main)/layout.jsx) → exports metadata.description ("Company Overview")
+```
+
+### 2.4 App Router `sitemap.ts` and `robots.ts`
+
+> **Canonical Domain Rule**: If the production website domain is `UNRESOLVED`, **DO NOT** generate a concrete `sitemap.ts` / `sitemap.xml` with hardcoded fallback domains (`https://example.com`, `http://localhost`, or backend API URLs). Record `globalStatus.sitemap: "pending_domain"` and defer file creation until domain is confirmed.
+
+When domain is verified, exclude API routes (`app/api/*`) from `sitemap.ts`:
 
 ```ts
 // app/sitemap.ts
 import { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mybrand.com";
   const routes = ["", "/about", "/services"].map((route) => ({
-    url: `https://example.com${route}`,
+    url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
     priority: route === "" ? 1.0 : 0.8,
@@ -133,6 +227,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 import { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mybrand.com";
   return {
     rules: [
       {
@@ -141,7 +236,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/api/", "/admin/"],
       },
     ],
-    sitemap: "https://example.com/sitemap.xml",
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }
 ```
