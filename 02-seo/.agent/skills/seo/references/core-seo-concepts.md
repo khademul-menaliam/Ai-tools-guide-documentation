@@ -110,6 +110,7 @@ Route Discovery
 - **Case 45 — Dynamic Metadata Returning Only Title**: Page `generateMetadata()` returns `{ title: "Detail" }`, parent layout provides description -> `metadataSource: { title: "page", description: "inherited" }`.
 - **Case 46 — Dynamic Metadata Returning Only Description**: Page `generateMetadata()` returns `{ description: "Summary" }`, parent layout provides title -> `metadataSource: { title: "inherited", description: "page" }`.
 - **Case 47 — Dynamic Metadata Indeterminate Return**: `generateMetadata()` returns dynamic or conditional expression whose fields cannot be safely statically resolved -> Classify conservatively; prompt user when external data verification is required without inventing values.
+- **Case 48 — Route Category Count Reconciliation**: Discovered route inventory of 22 total routes (11 SEO candidates, 8 REST API endpoints, 2 Auth/Admin routes, 1 Storage fallback route) -> Excluded route breakdown calculates 8 + 2 + 1 = 11 excluded routes -> Total routes = 11 SEO + 11 Excluded = 22 Total. Category counts are derived programmatically from actual classified `routeType` entries in `seo-tracker.json`. Hard-coded or inconsistent category counts (e.g. reporting 7 API endpoints when 8 are listed) are strictly rejected.
 
 ---
 
