@@ -13,8 +13,8 @@ A curated, production-ready knowledge base and suite of reusable **AI Agent Skil
 
 | Category / Focus Area | 🚀 Start Here | 🎯 Purpose & Capabilities | 📚 Detailed Reference |
 | :--- | :--- | :--- | :--- |
-| 🎨 **Web Design & Development** | [`01-web-design-and-dev/README.md`](./01-web-design-and-dev/README.md) | Design rules, non-generic UI, visual UX audits & 3D workflows | [📖 Master Web Design Guide](./01-web-design-and-dev/ai-website-design-development-guide.md) |
-| 🌐 **SEO Agent Skill** | [`02-seo/README.md`](./02-seo/README.md) | Autonomous multi-stage route classification, SEO audits & sitemaps | [📖 SEO Skill Operating Guide](./02-seo/seo-skill-guide.md) |
+| 🎨 **Category 01: Web Design & Dev** | [`01-web-design-and-dev/README.md`](./01-web-design-and-dev/README.md) | Design rules, non-generic UI, visual UX audits & 3D workflows | [📖 Master Web Design Guide](./01-web-design-and-dev/ai-website-design-development-guide.md) |
+| 🌐 **Category 02: SEO Agent Skill** | [`02-seo/README.md`](./02-seo/README.md) | Autonomous multi-stage route classification, SEO audits & sitemaps | [📖 SEO Skill Operating Guide](./02-seo/seo-skill-guide.md) |
 
 ---
 
@@ -43,28 +43,33 @@ A curated, production-ready knowledge base and suite of reusable **AI Agent Skil
 
 ---
 
-## 🎨 Category 01: Web Design & Development with AI
+# 🎨 Category 01 — Web Design & Frontend Engineering
 
-A complete, high-craft toolchain and design system designed to prevent generic AI-generated interfaces and elevate web frontend quality:
+> **Focus**: Modern UI/UX aesthetics, non-generic AI layouts, visual contrast audits & interactive 3D graphics  
+> **Directory**: [`./01-web-design-and-dev/`](./01-web-design-and-dev/README.md)
 
-* 📐 **HagiCode Design**: Architectural layout, typography scale, palette choices & design presets.
-* ✨ **Taste Skill**: Enforces custom aesthetic rules to guarantee tailored, premium UI outputs.
-* 🛡️ **Impeccable**: Automated visual UX audits, contrast checks, and component micro-refinements.
-* 🔮 **img2threejs**: Converts 2D reference images into interactive procedural Three.js 3D hero models.
+> [!IMPORTANT]
+> **Why Category 01 Matters**: Eliminates standard, repetitive "AI-generated" UI look-and-feels by enforcing strict architectural design rules (`DESIGN.md`), Taste skill prompts, automated visual UX audits (`Impeccable`), and procedural Three.js graphics.
 
-### 📚 Tools & Technical Documentation
-* 📖 [**Master AI Web Design & Development Guide**](./01-web-design-and-dev/ai-website-design-development-guide.md)
-* 📐 [**Awesome DESIGN.md Specifications**](./01-web-design-and-dev/tools-documentation/awesome-design-guide.md)
-* 🖼️ [**Awesome Design MD Gallery Reference**](./01-web-design-and-dev/tools-documentation/awesome-design-md-gallery.md)
-* ✨ [**Taste Skill Documentation**](./01-web-design-and-dev/tools-documentation/taste-skill-guide.md)
-* 🛡️ [**Impeccable Visual UX Audit Guide**](./01-web-design-and-dev/tools-documentation/impeccable-guide.md)
-* 🔮 [**img2threejs Procedural 3D Guide**](./01-web-design-and-dev/tools-documentation/img2threejs-guide.md)
+### 🛠️ Core Web Design Toolchain
+
+| Tool / Skill | Visual Focus | Key Capability | Quick Guide Link |
+| :--- | :--- | :--- | :--- |
+| 📐 **HagiCode Design** | Layout & Presets | Typography scale, color palette & layout structure rules | [📖 DESIGN.md Guide](./01-web-design-and-dev/tools-documentation/awesome-design-guide.md) |
+| ✨ **Taste Skill** | Frontend Quality | Custom aesthetic rules to guarantee tailored, premium UI | [✨ Taste Skill Guide](./01-web-design-and-dev/tools-documentation/taste-skill-guide.md) |
+| 🛡️ **Impeccable** | Visual UX Audit | Micro-spacing, contrast checks & component visual reviews | [🛡️ Impeccable Guide](./01-web-design-and-dev/tools-documentation/impeccable-guide.md) |
+| 🔮 **img2threejs** | Interactive 3D | Converts 2D reference images into procedural Three.js 3D models | [🔮 img2threejs Guide](./01-web-design-and-dev/tools-documentation/img2threejs-guide.md) |
+
+### 📚 Master References & Galleries
+- 📖 [**Master AI Web Design & Development Guide**](./01-web-design-and-dev/ai-website-design-development-guide.md)
+- 🖼️ [**Awesome Design MD Gallery Reference**](./01-web-design-and-dev/tools-documentation/awesome-design-md-gallery.md)
 
 ---
 
-## 🌐 Category 02: Reusable SEO Agent Skill
+# 🌐 Category 02 — Reusable Autonomous SEO Agent Skill
 
-A portable, autonomous SEO agent skill located at `.agent/skills/seo/` that can be copied directly into any customer codebase for framework-aware SEO auditing, automated fixing, and sitemap tracking.
+> **Focus**: Portable AI agent skill, multi-stage route classification, automated fixes & incremental tracking  
+> **Directory**: [`./02-seo/`](./02-seo/README.md) • **Skill Location**: `.agent/skills/seo/`
 
 > [!TIP]
 > **Single Prompt Trigger**  
@@ -72,19 +77,24 @@ A portable, autonomous SEO agent skill located at `.agent/skills/seo/` that can 
 > **`"Audit the SEO of this existing project."`**
 
 ### ⚙️ Regression-Tested Framework Support
-* ⚛️ **Next.js / React** — App Router & Pages Router, dynamic metadata, async `params` handling.
-* 🟢 **Vue / Nuxt** — Nuxt 3 `useSeoMeta`, Unhead integration, SSR head tag injection.
-* 🅰️ **Angular** — Angular `Title` & `Meta` services, SSR state transfer & head management.
-* 🔴 **Laravel** — Blade SEO partials, Inertia.js `<Head>`, Spatie XML sitemap generation.
+
+| Framework / Stack | Router & Rendering | SEO Features Handled | Dedicated Reference |
+| :--- | :--- | :--- | :--- |
+| ⚛️ **Next.js / React** | App Router & Pages Router | Static/dynamic `metadata`, async `params`, `sitemap.ts`, `robots.ts` | [📖 Next.js Guide](./02-seo/.agent/skills/seo/references/nextjs-react.md) |
+| 🟢 **Vue / Nuxt** | Nuxt 3 / Vue 3 | `useSeoMeta`, `@nuxtjs/sitemap`, Unhead SSR head tag injection | [📖 Vue/Nuxt Guide](./02-seo/.agent/skills/seo/references/vue-nuxt.md) |
+| 🅰️ **Angular** | Angular SSR & Hydration | `Title` & `Meta` services, server-rendered head tags | [📖 Angular Guide](./02-seo/.agent/skills/seo/references/angular.md) |
+| 🔴 **Laravel** | Blade & Inertia.js | Blade SEO partials, Inertia `<Head>`, Spatie XML sitemap generator | [📖 Laravel Guide](./02-seo/.agent/skills/seo/references/laravel.md) |
 
 ### 📁 Project-Specific State Architecture (`system-docs/`)
+
 All audited project state is persisted exclusively inside the target project's `system-docs/` folder:
-* ⚙️ `system-docs/seo-config.json` — Framework, router, language, rendering mode, and domain config (`schemaVersion: "1.0"`).
-* 📊 `system-docs/seo-tracker.json` — Route inventory, multi-stage classifications, `contentHash`, and global SEO status.
-* 📑 `system-docs/DEPLOYMENT-SEO-GUIDE.md` — Dynamically generated Google Search Console & deployment guide.
+
+- ⚙️ **`system-docs/seo-config.json`**: Detected framework, router, language, rendering mode, and domain configuration.
+- 📊 **`system-docs/seo-tracker.json`**: Route inventory, multi-stage classifications (`page`, `api`, `auth`), SHA-256 `contentHash`, and global status.
+- 📑 **`system-docs/DEPLOYMENT-SEO-GUIDE.md`**: Dynamically generated Google Search Console & deployment guide.
 
 > [!NOTE]
-> **Status**: **Stable & Production-Ready**. Built with deterministic route classification pipelines, content hashing, and false-fix protections.
+> **Production Status**: **Stable & Ready for Use**. Uses deterministic classification pipelines, SHA-256 content hashing, and false-fix protections.
 
 ---
 
@@ -109,5 +119,6 @@ Offline Word (`.docx`) versions of all guides are archived in the [`downloads/`]
 ## 🤝 Contributing & Feedback
 
 Contributions, suggestions, and new agent skill additions are welcome! Open an issue or submit a pull request.
+
 
 
