@@ -1,89 +1,275 @@
-# 02 — SEO Module & Agent Skill
+# SEO Agent Skill
 
-Welcome to the **SEO Module** of the `Ai-tools-guide` repository.
+Reusable SEO auditing and fixing Skill for web projects.
 
-This directory houses our portable, agentic **SEO Skill** (`.agent/skills/seo/`) and comprehensive documentation for deploying autonomous SEO workflows across web development projects.
+## Start here
+
+You normally only need **one prompt**:
+
+> **Audit the SEO of this existing project.**
+
+The Skill will inspect the project, detect the framework and routes, audit SEO, automatically fix safe deterministic issues, track the result, and create/update the deployment guide.
 
 ---
 
-## Directory Overview
+## 1. Normal user workflow
+
+### First audit
+
+Run your AI coding assistant from the **target project root** and say:
+
+> Audit the SEO of this existing project.
+
+The Skill will:
+
+1. Detect the framework, router, language, and rendering mode.
+2. Discover application routes.
+3. Classify routes into SEO pages and non-SEO routes.
+4. Check metadata, canonical URLs, Open Graph, structured data, headings, image accessibility, sitemap, robots, and related SEO requirements.
+5. Automatically fix safe/deterministic issues.
+6. Ask only for information it genuinely cannot determine.
+7. Create/update:
+   - `system-docs/seo-config.json`
+   - `system-docs/seo-tracker.json`
+   - `system-docs/DEPLOYMENT-SEO-GUIDE.md`
+8. Run the relevant verification/build checks.
+9. Report what was fixed and what remains.
+
+### If the Skill asks for the production domain
+
+Provide the **frontend production website URL**, for example:
 
 ```text
-02-seo/
-├── README.md                           # Main SEO module documentation (this file)
-├── seo-skill-guide.md                  # Complete operating guide for the SEO Skill
-│
-├── .agent/                             # Agent Skills Container (copyable into any project)
-│   └── skills/
-│       └── seo/
-│           ├── SKILL.md                # Orchestration skill definition & workflow controller
-│           └── references/             # Framework and concept reference files
-│               ├── core-seo-concepts.md
-│               ├── nextjs-react.md
-│               ├── vue-nuxt.md
-│               ├── angular.md
-│               ├── laravel.md
-│               └── gsc-post-deploy.md
-│
-└── tools-documentation/
-    ├── README.md                       # Tools documentation index
-    ├── inspection-notes.md             # Inspection notes from base react-seo-skills repo
-    └── react-seo-skills-guide.md       # Comparative guide & technical analysis of base skill vs our skill
+https://example.com
+```
+
+Do not provide a backend/API URL when the Skill is asking for the frontend website domain.
+
+### After future project changes
+
+Use:
+
+> Audit the SEO again.
+
+The Skill compares the current route/source state with the tracker and handles:
+
+- `NEW` routes
+- `MODIFIED` routes
+- `UNCHANGED` routes
+- `DELETED` routes
+
+It uses route content hashing so unchanged routes are not unnecessarily re-audited.
+
+### If you already have identified SEO issues
+
+Use:
+
+> Fix the SEO issues you identified.
+
+The Skill fixes safe issues, updates the tracker, and updates the deployment guide.
+
+---
+
+## 2. What the Skill handles automatically
+
+### Technical SEO
+
+- Title and meta description
+- Canonical URL
+- Open Graph metadata
+- Social metadata
+- Robots directives
+- Sitemap
+- Structured data / JSON-LD
+- Heading hierarchy
+- Image `alt` accessibility checks
+- Route classification
+- Public vs private/transactional route handling
+- Production-domain configuration
+
+### Route intelligence
+
+The Skill does not treat every URL as a public SEO page.
+
+It distinguishes public SEO pages from examples such as:
+
+- Authentication
+- Admin/private pages
+- Checkout/booking/transaction flows
+- Post-action confirmation/success pages
+- API endpoints
+- Storage/fallback routes
+- Error handlers
+
+Counts in reports and deployment guides are derived from the actual tracker rather than hard-coded.
+
+### Incremental audits
+
+The tracker stores SHA-256 route content hashes.
+
+That allows the Skill to detect whether a route is:
+
+```text
+NEW
+MODIFIED
+UNCHANGED
+DELETED
+```
+
+Deleted routes are removed from the active tracker after confirmation.
+
+### Rendering detection
+
+The Skill detects rendering strategy where framework evidence supports it:
+
+```text
+SSR
+SSG
+CSR
+Hybrid
+Unknown
+```
+
+If evidence is insufficient, it does not invent a rendering mode.
+
+A manual rendering override is respected.
+
+---
+
+## 3. Files created in a customer project
+
+After an audit, look in:
+
+```text
+system-docs/
+├── seo-config.json
+├── seo-tracker.json
+└── DEPLOYMENT-SEO-GUIDE.md
+```
+
+### `seo-config.json`
+
+Stores project-level SEO configuration such as:
+
+- project name
+- production domain
+- framework
+- router
+- language
+- rendering mode
+- SEO settings
+
+### `seo-tracker.json`
+
+Stores:
+
+- discovered routes
+- route status
+- last audit time
+- route content hash
+- resolved issues
+- pending issues
+- sitemap/robots status
+- audit summary
+
+### `DEPLOYMENT-SEO-GUIDE.md`
+
+A project-specific go-live guide generated automatically by the Skill.
+
+It normally contains:
+
+- production-domain requirements
+- Google Search Console verification
+- sitemap submission
+- robots verification
+- indexing checks
+- Core Web Vitals follow-up
+- structured-data verification
+- remaining project-specific warnings
+
+You do **not** need to ask separately for this guide after an audit.
+
+---
+
+## 4. Final audit result
+
+A completed audit ends with a short state-driven result such as:
+
+```text
+SEO AUDIT COMPLETE
+
+Status:
+- Automatically fixed: X
+- Remaining issues: X
+- Information required: X
+- Permission required: Yes/No
+
+Next step:
+- ...
+```
+
+If nothing remains, the Skill should say so directly.
+
+---
+
+## 5. Supported framework regression coverage
+
+The reusable Skill has been regression-tested for:
+
+- Next.js / React
+- Vue / Nuxt
+- Angular
+- Laravel
+
+The framework reference files are located at:
+
+```text
+02-seo/.agent/skills/seo/references/
 ```
 
 ---
 
-## Base `react-seo-skills` vs Our Extended Skill
+## 6. Installing the Skill in a project
 
-We used [`daniel-amekpoagbe/react-seo-skills`](https://github.com/daniel-amekpoagbe/react-seo-skills) as our base technical reference. Below is a comparison highlighting how our skill builds upon and extends the base foundation:
+Copy the `.agent` directory from:
 
-| Feature / Dimension | Base `react-seo-skills` Repo | Our Extended SEO Agent Skill (Phase 3.6.3 Hardened) |
-| :--- | :--- | :--- |
-| **Supported Frameworks** | Next.js (App & Pages Router), Astro, Vite + React | Next.js/React, Vue/Nuxt, Angular, Laravel (extensible architecture) |
-| **Route Classification** | Basic / Assumptions | Multi-Stage Pipeline (`page`, `transactional`, `auth`, `utility`, `api`, `admin`, `redirect`, `error`, `asset`, `unknown`) |
-| **Non-SEO HTML & API Handling** | None (could treat API/forms as HTML SEO) | Transactional, auth, utility HTML routes and REST/JSON API endpoints excluded from sitemaps and SEO audits |
-| **Metadata Source Resolution** | None / Naive | Independent structural resolution (`resolveMetadataField`), nearest nested layout precedence, AST/return inspection, zero raw string heuristics |
-| **Finding Lifecycle & Repeatability**| None | Strict lifecycle (`NEW ISSUE → FIXED`, `ALREADY FIXED → NO CHANGE`, `UNRESOLVED → USER INPUT REQUIRED`, `NO ISSUE`), current-state precedence, zero false fixes |
-| **Audit State Memory** | None (stateless; re-audits whole codebase every run) | Incremental tracking via `system-docs/seo-tracker.json` (`schemaVersion: "1.0"`) |
-| **Change Detection** | Timestamp / None | Deterministic SHA-256 content hashing (`contentHash: "sha256:..."`) |
-| **Shared SEO Invalidation** | None | Changes to root layouts (`app/layout.tsx`) invalidate dependent route hashes (`globalSeoHash`) |
-| **File Modification Tracking** | None | Separate reporting of `Files Inspected`, `Files Modified`, and `Files Unchanged` |
-| **Legacy Tracker Migration** | None | Backfills missing `contentHash` entries automatically during baseline re-audit |
-| **Deleted Route Cleanup** | None | Automatic comparison of discovered routes vs tracker; cleans up deleted routes |
-| **Rendering Detection** | Basic / Implied | Conservative classification (`SSR`, `SSG`, `CSR`, `Hybrid`, `Unknown`) in `seo-config.json` |
-| **Project Environment Config** | None | Environment config via `system-docs/seo-config.json` (`schemaVersion: "1.0"`) |
-| **Deployment Guidance** | Static validation checklist | Dynamic `system-docs/DEPLOYMENT-SEO-GUIDE.md` combining live state + GSC instructions |
-| **Portability** | Standalone npm package / Cursor skill | Native `.agent/skills/seo/` format compatible with AI agent conventions |
-
----
-
-## How to Install / Copy the Skill into a Project
-
-To equip any client or target repository with this SEO skill, copy the `.agent` directory into the root of the target project:
-
-```bash
-# Example: Copying the skill into a target project
-cp -r 02-seo/.agent /path/to/target-project/
+```text
+02-seo/.agent/
 ```
 
-Once placed at `/path/to/target-project/.agent/skills/seo/`, compatible AI coding agents will automatically discover the skill and utilize its instructions during SEO tasks.
+into the root of the target project.
+
+The target project should then contain:
+
+```text
+my-project/
+└── .agent/
+    └── skills/
+        └── seo/
+            ├── SKILL.md
+            └── references/
+```
+
+Then run the normal audit prompt from the target project's root.
 
 ---
 
-## System-Docs State Architecture
+## 7. Stable status
 
-The skill maintains complete separation between reusable skill instructions and project-specific state. All target project data is stored inside `system-docs/` in the target project root:
+The SEO Skill has completed:
 
-1. **`system-docs/seo-config.json`**: Stores detected/configured framework, router, language, rendering mode (`SSR`, `SSG`, `CSR`, `Hybrid`, `Unknown`), and site settings. Uses `"schemaVersion": "1.0"`.
-2. **`system-docs/seo-tracker.json`**: Tracks audited routes, classification properties (`routeType`, `responseType`, `isSeoPageCandidate`), SHA-256 `contentHash`, `globalSeoHash`, completed fixes, pending items, timestamps, and global SEO status. Uses `"schemaVersion": "1.0"`.
-3. **`system-docs/DEPLOYMENT-SEO-GUIDE.md`**: Dynamically generated post-launch guide combining real tracker state with GSC verification steps.
+- Core implementation
+- Validation evidence
+- Framework regression
+- Incremental regression
+- Route-category reconciliation
+- Deployment-guide automation
+- Production workflow verification
+- Dynamic sitemap verification
+- Final acceptance testing
 
----
+Current status:
 
-## Summary of Workflows
+**STABLE / READY FOR USE**
 
-1. **Initial Baseline Audit**: Detects project stack & rendering -> Asks user for missing business details -> Writes `seo-config.json` -> Classifies routes (`page`, `api`, `admin`, `redirect`, `error`, `asset`) -> Builds verified `isSeoPageCandidate` inventory -> Computes baseline content hashes -> Audits global & page SEO -> Generates sitemap for HTML pages -> Writes `seo-tracker.json` -> Automatically generates `system-docs/DEPLOYMENT-SEO-GUIDE.md` -> Reports summary with Next Steps.
-2. **Subsequent Incremental Audit**: Reads `seo-config.json` & `seo-tracker.json` -> Re-classifies routes -> Checks legacy hashes & shared layout invalidation -> Computes current content hashes -> Classifies routes (`NEW`, `MODIFIED`, `UNCHANGED`, `DELETED`) -> Cleans up deleted routes -> Audits only modified/new/incomplete `isSeoPageCandidate` pages -> Updates sitemap & `seo-tracker.json` -> Automatically updates `system-docs/DEPLOYMENT-SEO-GUIDE.md` -> Reports progress with Next Steps.
-3. **Deployment Guide Generation**: Generates or updates `system-docs/DEPLOYMENT-SEO-GUIDE.md` combining live tracker state with post-launch GSC/Bing verification procedures (executed automatically post-audit or on demand).
-
-For full step-by-step operating details, consult [seo-skill-guide.md](seo-skill-guide.md).
+No additional development phase is required unless a real reproducible defect is discovered.
